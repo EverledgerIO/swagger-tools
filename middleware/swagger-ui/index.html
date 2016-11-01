@@ -69,12 +69,37 @@
           showRequestHeaders: false
         });
 
+        function bindApiKeyAuth(parameterId, param, key, location) {
+          var apiKeyAuth = new SwaggerClient.ApiKeyAuthorization(param, key, location);
+          window.swaggerUi.api.clientAuthorizations.add(parameterId, apiKeyAuth);
+          log("added key " + key + " for auth parameter " + parameterId);
+        }
+
         function addApiKeyAuthorization(){
           var key = encodeURIComponent($('#input_apiKey')[0].value);
           if(key && key.trim() != "") {
-            var apiKeyAuth = new SwaggerClient.ApiKeyAuthorization("api_key", key, "query");
-            window.swaggerUi.api.clientAuthorizations.add("api_key", apiKeyAuth);
-            log("added key " + key);
+            var search = window.location.search.replace(/^\?/, '');
+
+            if (!search.length) {
+              bindApiKeyAuth("api_key", "api_key", key, "query");
+            } else {
+              var authDefinitions = search.split('&').reduce(function(query, param) {
+                param = param.split('=');
+                if (param[0] === 'apiAuth') {
+                  param[1] = param[1].split(',');
+                }
+                query[param[0]] = param[1];
+                return query;
+              }, {})['apiAuth'];
+
+              if (authDefinitions) {
+                authDefinitions.forEach(function(def) {
+                  bindApiKeyAuth(def, "Authorization", "Bearer " + key, "header");
+                });
+              } else {
+                bindApiKeyAuth("api_key", "api_key", key, "query");
+              }
+            }
           }
         }
 
