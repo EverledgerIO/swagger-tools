@@ -47,6 +47,7 @@ var staticOptions = {};
  * @param {string=/api-docs} [options.apiDocs] - The relative path to serve your Swagger documents from
  * @param {string=/docs} [options.swaggerUi] - The relative path to serve Swagger UI from
  * @param {string} [options.swaggerUiDir] - The filesystem path to your custom swagger-ui deployment to serve
+ * @param {string} [options.queryParams] - Any additional querystring parameters to append to the swagger-ui browser
  *
  * @returns the middleware function
  */
@@ -136,9 +137,9 @@ exports = module.exports = function (rlOrSO, apiDeclarations, options) {
 
       // Remove the part after the mount point
       swaggerApiDocsURL = swaggerApiDocsURL.substring(0, swaggerApiDocsURL.indexOf(req.url));
-      
+
       // Add the API docs path and remove any double dashes
-      swaggerApiDocsURL = ((options.swaggerUiPrefix ? options.swaggerUiPrefix : '') + swaggerApiDocsURL + options.apiDocs).replace(/\/\//g, '/'); 
+      swaggerApiDocsURL = ((options.swaggerUiPrefix ? options.swaggerUiPrefix : '') + swaggerApiDocsURL + options.apiDocs).replace(/\/\//g, '/');
     }
 
     debug('%s %s', req.method, req.url);
@@ -157,6 +158,10 @@ exports = module.exports = function (rlOrSO, apiDeclarations, options) {
 
       if (path === options.swaggerUi || path === options.swaggerUi + '/') {
         req.url = '/';
+
+        if (options.queryParams && Object.keys(req.query).length === 0) {
+          return res.redirect(options.swaggerUi + req.url + '?' + options.queryParams);
+        }
       } else {
         req.url = req.url.substring(options.swaggerUi.length);
       }
